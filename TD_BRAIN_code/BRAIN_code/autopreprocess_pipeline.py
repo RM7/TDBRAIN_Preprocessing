@@ -9,8 +9,10 @@ copyright: Research Institute Brainclinics, Brainclinics Foundation, Nijmegen, t
 
 """
 
-from TD_BRAIN_code.autopreprocessing import dataset as ds
-from TD_BRAIN_code.inout import FilepathFinder as FF
+#TODO need functionality to skip already preprocessed data
+
+from BRAIN_code.autopreprocessing import dataset as ds
+from BRAIN_code.inout import FilepathFinder as FF
 import os
 from pathlib import Path
 import numpy as np
@@ -44,9 +46,12 @@ def autopreprocess_standard(varargsin, subject = None, startsubj =0):
     if len(csv.files)<1:
         raise ValueError('no csv files found in this specified path, please check your sourcepath '+sourcepath)
 
+
     #other variables
     if not 'condition' in varargsin:
         reqconds = ['EO','EC']
+    else: #needed to be added to integrate existing conditions
+        reqconds = varargsin['condition']
 
     if not 'exclude' in varargsin:
         varargsin['exclude'] = []

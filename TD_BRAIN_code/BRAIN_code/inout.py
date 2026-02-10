@@ -35,7 +35,7 @@ def loadbysubID(root_dir, subID, condition):
         processing and functions
     *-----------------------------------------------------------------------*"""
     import fnmatch
-    from BCD_gitprojects.data_processing.processing.interprocessing import interdataset as ids
+    from BRAIN_code.interprocessing import interdataset as ids
     def find(IDcode, pattern, path): #This function walks throug all folders to find the specific IDcode
         result = []
         for root, dirs, files in os.walk(path):

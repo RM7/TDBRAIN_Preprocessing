@@ -49,9 +49,9 @@ log:
 import os
 import numpy as np
 import pandas as pd
-from scipy.signal import butter, sosfiltfilt, filtfilt, iirnotch, hilbert, convolve, boxcar, medfilt
+from scipy.signal import butter, sosfiltfilt, filtfilt, iirnotch, hilbert, convolve, medfilt
 from scipy import signal
-from scipy.signal.windows import hann
+from scipy.signal.windows import hann, boxcar, tukey
 from scipy.stats import zscore
 
 
@@ -343,12 +343,12 @@ class dataset:
             normal_cutoff = lpfreq / nyq
             b, a = butter(4, normal_cutoff, btype='lowpass', analog=False)
             filtEOG = filtfilt(b, a, EOG)
-            hilEOG  = hilbert(filtEOG.copy(), N=np.int(len(filtEOG)+
+            hilEOG  = hilbert(filtEOG.copy(), N=np.int_(len(filtEOG)+
                                              len(filtEOG)*0.20), axis = -1)
             hilbEOG = hilEOG[:filtEOG.shape[0]]
             amplenv = np.abs(hilbEOG)
 
-            boxdata = convolve(amplenv, boxcar(np.int(0.2*self.Fs)), mode ='same', method ='direct')
+            boxdata = convolve(amplenv, boxcar(np.int_(0.2*self.Fs)), mode ='same', method ='direct')
 
             '''.........................................................................'''
             ''' Regression NUMPY way'''
@@ -376,11 +376,11 @@ class dataset:
             if len(Atrl) > 0:
                 for i in range(Atrl.shape[0]):
                     if Atrl[i,0]==0:
-                        artsamples[0:Atrl[0,1]+np.int((Atrl[0,1]-0)*padding)]=1
+                        artsamples[0:Atrl[0,1]+np.int_((Atrl[0,1]-0)*padding)]=1
                     elif Atrl[i,1]==datapaddeddata.shape[1]:
-                        artsamples[Atrl[i,0]-np.int((Atrl[i,1]-Atrl[i,0])*padding):datapaddeddata.shape[1]]=1
+                        artsamples[Atrl[i,0]-np.int_((Atrl[i,1]-Atrl[i,0])*padding):datapaddeddata.shape[1]]=1
                     else:
-                        artsamples[Atrl[i,0]-np.int((Atrl[i,1]-Atrl[i,0])*padding):Atrl[i,1]+np.int((Atrl[i,1]-Atrl[i,0])*padding)]=1
+                        artsamples[Atrl[i,0]-np.int_((Atrl[i,1]-Atrl[i,0])*padding):Atrl[i,1]+np.int_((Atrl[i,1]-Atrl[i,0])*padding)]=1
 
             ''' Define the starts and endings of the collapsed EOG artifacts '''
             p = np.where(artsamples==1)[0]
@@ -414,7 +414,7 @@ class dataset:
                     for k in range(ARTtrl.shape[0]):
                             ''' convolve with taper to avoid inducing broadband signal into EEG...
                             channels (jump) '''
-                            Attaper = signal.tukey(len(np.arange(ARTtrl[k,0],ARTtrl[k,1])),alpha = 0.025)
+                            Attaper = tukey(len(np.arange(ARTtrl[k,0],ARTtrl[k,1])),alpha = 0.025)
 
                             Atmpweight[k,r,ARTtrl[k,0]:ARTtrl[k,1]] = np.linalg.lstsq(
                                     EOG_row_vec[ARTtrl[k,0]:ARTtrl[k,1]],
@@ -458,7 +458,7 @@ class dataset:
         sos = butter(4, [high_pass, low_pass], btype='bandpass', analog=False, output = 'sos')
         filtEMG = sosfiltfilt(sos, self.data)
 
-        N=np.int(filtEMG.shape[1])#+filtEMG.shape[1]*0.10)
+        N=np.int_(filtEMG.shape[1])#+filtEMG.shape[1]*0.10)
         if N % 2 == 0:
             N=N
         else:
@@ -473,7 +473,7 @@ class dataset:
         hanndata = np.zeros((n_data_rows,self.data.shape[1]))
         ''' hanning smooth '''
         for r in range(n_data_rows):
-            hanndata[r,:] = convolve(amplenv[r,:], hann(np.int(0.5*self.Fs),sym=True), mode ='same')#, method ='direct')
+            hanndata[r,:] = convolve(amplenv[r,:], hann(np.int_(0.5*self.Fs),sym=True), mode ='same')#, method ='direct')
         ''' zvalue threshold '''
         Zdata = zscore(hanndata,axis=1)
         tmpEMGsamps = np.zeros((hanndata.shape[0],hanndata.shape[1]))
@@ -485,7 +485,7 @@ class dataset:
                 #introduce an absolute threshold to extract only EMG data that is evident?
                 didx = np.where(amplenv[r,sidx]>3)
                 tmpEMGsamps[r,sidx[didx]]=1
-                boxdata = convolve(tmpEMGsamps[r,:], boxcar(np.int(0.5*self.Fs)), mode ='same', method ='direct')
+                boxdata = convolve(tmpEMGsamps[r,:], boxcar(np.int_(0.5*self.Fs)), mode ='same', method ='direct')
                 inpEMGsamps[r,np.where(boxdata>0)]=1
 
         EMGtrl, EMGsamps = self._artifact_samps_trl(inpEMGsamps, padding,self.Fs, self.data[-1].shape[0])
@@ -575,7 +575,7 @@ class dataset:
         for r in range(n_data_rows):
             if ~np.isnan(self.data[r,0]):
                 for w in range(len(winstarts)):
-                    kurt[r,np.int(winstarts[w]):np.int(winends[w])] = kurtosis(self.data[r,np.int(winstarts[w]):np.int(winends[w])],fisher = True)
+                    kurt[r,np.int_(winstarts[w]):np.int_(winends[w])] = kurtosis(self.data[r,np.int_(winstarts[w]):np.int_(winends[w])],fisher = True)
 
                 if len(np.where(kurt[r,:]>threshold)[0]) > 0:
                     inpKURTsamps[r,np.where(kurt[r,:]>threshold)[0]]=1
@@ -631,7 +631,7 @@ class dataset:
         for r in range(n_data_rows):
             if ~np.isnan(self.data[r,0]):
                 for w in range(len(winstarts)):
-                    swing[r,np.int(winstarts[w]):np.int(winends[w])] = np.nanmax(self.data[r,np.int(winstarts[w]):np.int(winends[w])])-np.nanmin(self.data[r,np.int(winstarts[w]):np.int(winends[w])])
+                    swing[r,np.int_(winstarts[w]):np.int_(winends[w])] = np.nanmax(self.data[r,np.int_(winstarts[w]):np.int_(winends[w])])-np.nanmin(self.data[r,np.int_(winstarts[w]):np.int_(winends[w])])
                 if len(np.where(np.abs(swing[r,:])>threshold)[0]) > 0:
                     inpSWINGsamps[r,np.where(swing[r,:]>threshold)[0]]=1
 
@@ -660,7 +660,7 @@ class dataset:
         filtEB = sosfiltfilt(sos, self.data)
 #        filtpadding = filtEB.shape[1]*0.10
 
-        N=np.int(filtEB.shape[1]+filtEB.shape[1]*0.10)
+        N=np.int_(filtEB.shape[1]+filtEB.shape[1]*0.10)
         if N % 2 == 0:
             N=N
         else:
@@ -676,7 +676,7 @@ class dataset:
         hanndata = np.zeros((n_data_rows,self.data.shape[1]))
         ''' hanning smooth '''
         for r in range(n_data_rows):
-            hanndata[r,:] = convolve(amplenv[r,:], hann(np.int(1*self.Fs),sym=True), mode ='same')#, method ='direct')
+            hanndata[r,:] = convolve(amplenv[r,:], hann(np.int_(1*self.Fs),sym=True), mode ='same')#, method ='direct')
 
         ''' zvalue threshold '''
         Zdata = zscore(hanndata, axis=1)
@@ -792,9 +792,9 @@ class dataset:
         '''======= check if a channel is bad (high broadband / EMG signal) for the whole measurement ======='''
         '''default threshold = 1.96 '''
         from scipy.fftpack import fft
-        from scipy.signal import hann
+        #from scipy.signal import hann
 
-        hannwin = hann(np.int(self.data.shape[-1]))
+        hannwin = hann(np.int_(self.data.shape[-1]))
         power = np.abs(fft(self.data[:n_data_rows,:])*hannwin)**2
         freqs = np.linspace(0, self.Fs/2,int(len(power[0,:])/2))
         fid = [(np.where((freqs > 55) & (freqs < 95)))][0][0]
@@ -927,10 +927,10 @@ class dataset:
                     ''' select the segments around the artifacts (as much as possible) '''
                     ''' from the first sample to the beginning of the last artifact '''
                     t = 0
-                    trials=np.zeros((1,self.data.shape[1],np.int(self.Fs*epochlength)));marktrials = trials.copy();
+                    trials=np.zeros((1,self.data.shape[1],np.int_(self.Fs*epochlength)));marktrials = trials.copy();
                     trl = np.array([0,0],dtype=int)
                     for i in range(ARTtrl.shape[0]):
-                        if (ARTtrl[i,0]-t)>(np.int(epochlength*self.Fs)):
+                        if (ARTtrl[i,0]-t)>(np.int_(epochlength*self.Fs)):
                             tmp = self.data[:,t:ARTtrl[i,0]]
                             segs,segstrl = self._EEGsegmenting(np.asarray(tmp),epochlength)
                             trials = np.concatenate([trials,segs],axis=0)
@@ -1100,7 +1100,7 @@ class dataset:
 
                 segments = []
                 ticklocs = []
-                #ticks = np.arange(0,np.int(n_samples/self.Fs),np.around((np.int((n_samples/self.Fs))/10),decimals=1))
+                #ticks = np.arange(0,np.int_(n_samples/self.Fs),np.around((np.int_((n_samples/self.Fs))/10),decimals=1))
                 for i in range(n_rows):
                     segments.append(np.column_stack((t, data[seg,i,:])))
                     ticklocs.append(i * dr)
@@ -1466,12 +1466,12 @@ class dataset:
 
     def _EEGsegmenting(self,inp, trllength, fs=500, overlap=0):
 
-        epochlength = np.int(trllength*fs)
+        epochlength = np.int_(trllength*fs)
         stepsize = (1-overlap)*epochlength
 
         ''' define the size of the data '''
         n_totalsamples, n_samples, n_rows = inp.shape[1],epochlength, inp.shape[0]
-        n_trials = np.int(n_totalsamples/stepsize)
+        n_trials = np.int_(n_totalsamples/stepsize)
 
         trl = np.array([0,0],dtype=int)
         t = 0
@@ -1481,7 +1481,7 @@ class dataset:
 
         trl = trl[1:]
 
-        data = np.zeros((n_trials, n_rows, np.int(n_samples)))
+        data = np.zeros((n_trials, n_rows, np.int_(n_samples)))
         for i in range(n_trials):
             if trl[i,0] <= n_totalsamples-n_samples:
                 data[i,:,:]= inp[:,trl[i,0]:trl[i,1]]
@@ -1581,8 +1581,8 @@ class dataset:
             if len(upidxs)>len(downidxs):
                 downidxs = np.append(np.where(np.diff(inpdata)==-1)[0],totalsamps)
 
-            startidxs = upidxs-np.int(artpadding*Fs)
-            endidxs = downidxs+np.int(artpadding*Fs)
+            startidxs = upidxs-np.int_(artpadding*Fs)
+            endidxs = downidxs+np.int_(artpadding*Fs)
 
             tmpARTtrl = np.array([0,0],dtype=int)
             for k in range(len(startidxs)):

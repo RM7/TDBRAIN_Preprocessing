@@ -38,7 +38,10 @@ class interdataset(object):
                 try:
                     attr_copy = copy.deepcopy(getattr(self, k))
                 except Exception as e:
-                    attr_copy = object_copy(getattr(self, k))
+                    # If deepcopy fails, use shallow copy as fallback
+                    print(f"Warning: Could not deepcopy attribute '{k}', using shallow copy. Error: {e}")
+                    attr_copy = copy.copy(getattr(self, k))
+                    #attr_copy = object_copy(getattr(self, k))
                 setattr(new_obj, k, attr_copy)
 
             new_attrs = list(new_obj.__dict__.keys())
@@ -182,10 +185,10 @@ class interdataset(object):
                     ''' select the segments around the artifacts (as much as possible) '''
                     ''' from the first sample to the beginning of the last artifact '''
                     t = 0
-                    trials=np.zeros((1,self.data.shape[1],np.int(self.Fs*epochlength)));marktrials = trials.copy();
+                    trials=np.zeros((1,self.data.shape[1],np.int_(self.Fs*epochlength)));marktrials = trials.copy();
                     trl = np.array([0,0],dtype=int)
                     for i in range(ARTtrl.shape[0]):
-                        if (ARTtrl[i,0]-t)>(np.int(epochlength*self.Fs)):
+                        if (ARTtrl[i,0]-t)>(np.int_(epochlength*self.Fs)):
                             tmp = self.data[:,:,t:ARTtrl[i,0]]
                             segs,segstrl = EEGsegmenting(np.asarray(tmp),epochlength)
                             trials = np.concatenate([trials,segs],axis=0)
@@ -368,7 +371,7 @@ class interdataset(object):
 
                 segments = []
                 ticklocs = []
-                #ticks = np.arange(0,np.int(n_samples/self.Fs),np.around((np.int((n_samples/self.Fs))/10),decimals=1))
+                #ticks = np.arange(0,np.int_(n_samples/self.Fs),np.around((np.int_((n_samples/self.Fs))/10),decimals=1))
                 for i in range(n_rows):
                     segments.append(np.column_stack((t, data[seg,i,:])))
                     ticklocs.append(i * dr)
@@ -730,12 +733,12 @@ class interdataset(object):
 
 def EEGsegmenting(inp, trllength, fs=500, overlap=0):
 
-    n_samples = np.int(trllength*fs)
+    n_samples = np.int_(trllength*fs)
     stepsize = (1-overlap)*n_samples
 
     ''' define the size of the data '''
     n_totalsamples, n_rows = inp.shape[-1], inp.shape[1]
-    n_trials = np.int(n_totalsamples/stepsize)
+    n_trials = np.int_(n_totalsamples/stepsize)
 
     trl = np.array([0,0],dtype=int)
     t = 0
@@ -745,7 +748,7 @@ def EEGsegmenting(inp, trllength, fs=500, overlap=0):
 
     trl = trl[1:]
 
-    data = np.zeros((n_trials, n_rows, np.int(n_samples)))
+    data = np.zeros((n_trials, n_rows, np.int_(n_samples)))
     for i in range(n_trials):
         if trl[i,0] <= n_totalsamples-n_samples:
             data[i,:,:]= inp[0,:,trl[i,0]:trl[i,1]]
